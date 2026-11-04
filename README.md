@@ -2,4 +2,4 @@
 
 Ferramenta HTML/JS standalone para controle de vales, adiantamentos e retiradas internas de colaboradores.
 
-Acesse via GitHub Pages: (em breve)
+Acesse: https://rhgrupomacris-creator.github.io/Planilha-Vales-RHMACRIS/
