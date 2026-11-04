@@ -1,0 +1,1383 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planilha de Vales — Grupo Macris</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --bg:#F4F5F2;
+  --surface:#FFFFFF;
+  --border:#E1E3DE;
+  --ink:#1C2430;
+  --ink-soft:#5C6570;
+  --ink-faint:#8A9099;
+  --brand:#0E6E6C;
+  --brand-dark:#0A5453;
+  --brand-tint:#E4F2F1;
+  --amber:#B4780F;
+  --amber-tint:#FBF0DD;
+  --green:#2F7D53;
+  --green-tint:#E4F3EA;
+  --red:#C0433A;
+  --red-tint:#FBE7E4;
+  --shadow: 0 1px 2px rgba(28,36,48,.06), 0 4px 16px rgba(28,36,48,.05);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  font-size:14px;
+  line-height:1.5;
+}
+h1,h2,h3,.display{font-family:'Sora',system-ui,sans-serif;}
+.num{font-family:'IBM Plex Mono',monospace; font-weight:600; font-variant-numeric:tabular-nums;}
+::selection{background:var(--brand-tint);}
+button{font-family:inherit; cursor:pointer;}
+input,select,textarea{font-family:inherit; font-size:14px;}
+a{color:var(--brand);}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  background:var(--ink);
+  color:#fff;
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+}
+.brand{display:flex; align-items:center; gap:12px;}
+.brand-mark{
+  width:36px;height:36px;border-radius:10px;
+  background:var(--brand);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Sora',sans-serif;font-weight:700;font-size:16px;color:#fff;
+  flex:none;
+}
+.brand-text h1{margin:0;font-size:17px;font-weight:700;color:#fff;letter-spacing:-.01em;}
+.brand-text p{margin:1px 0 0;font-size:12px;color:#B6BCC4;}
+.topbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  padding:8px 13px;
+  border-radius:8px;
+  font-size:12.5px;
+  font-weight:600;
+  display:inline-flex;align-items:center;gap:6px;
+  white-space:nowrap;
+  transition:background .12s, transform .05s;
+}
+.btn:hover{background:rgba(255,255,255,.14);}
+.btn:active{transform:translateY(1px);}
+.btn-light{
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--ink);
+}
+.btn-light:hover{background:#F8F8F6;}
+.btn-brand{
+  background:var(--brand);
+  border:1px solid var(--brand);
+  color:#fff;
+}
+.btn-brand:hover{background:var(--brand-dark);}
+.btn-ghost{
+  background:transparent;border:1px solid var(--border);color:var(--ink-soft);
+}
+.btn-ghost:hover{background:#F0F1EE;}
+.btn-danger{color:var(--red); border-color:var(--red-tint); background:var(--red-tint);}
+.btn-danger:hover{background:#f7d9d5;}
+.btn-sm{padding:6px 10px;font-size:12px;border-radius:7px;}
+.btn[disabled]{opacity:.45;cursor:not-allowed;}
+
+/* ---------- Tabs ---------- */
+.tabbar{
+  background:var(--ink);
+  padding:0 24px;
+  display:flex;
+  gap:4px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.tab{
+  background:transparent;border:none;color:#9BA2AC;
+  padding:12px 16px 11px;
+  font-size:13.5px;font-weight:600;
+  border-bottom:2px solid transparent;
+  display:flex;align-items:center;gap:6px;
+}
+.tab:hover{color:#fff;}
+.tab.active{color:#fff;border-bottom-color:var(--brand);}
+
+/* ---------- Layout ---------- */
+.view{padding:22px 24px 60px; max-width:1480px; margin:0 auto;}
+.view[hidden]{display:none;}
+
+.period-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+.period-nav{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:6px 8px;box-shadow:var(--shadow);}
+.period-nav button{background:transparent;border:none;color:var(--ink-soft);width:28px;height:28px;border-radius:6px;font-size:15px;display:flex;align-items:center;justify-content:center;}
+.period-nav button:hover{background:#F0F1EE;color:var(--ink);}
+.period-label{font-family:'Sora',sans-serif;font-weight:700;font-size:15px;min-width:170px;text-align:center;}
+
+.filters-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;}
+.filters-row input[type=text], .filters-row select{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:9px 11px;
+  font-size:13px;
+  color:var(--ink);
+  min-width:160px;
+}
+.filters-row input[type=text]{min-width:230px;}
+.filters-row select{cursor:pointer;}
+
+.cards-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;box-shadow:var(--shadow);
+}
+.card.accent{background:var(--brand-tint);border-color:#CFE7E5;}
+.card .label{font-size:12px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
+.card .value{font-size:22px;font-weight:700;}
+.card .value.green{color:var(--green);}
+.card .value.red{color:var(--red);}
+.card .value.brand{color:var(--brand-dark);}
+
+/* ---------- Table ---------- */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  text-align:left;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;
+  color:var(--ink-soft);font-weight:700;
+  padding:10px 12px;border-bottom:1px solid var(--border);background:#FAFAF8;
+  white-space:nowrap;
+}
+tbody td{padding:10px 12px;border-bottom:1px solid #EEEFEA;font-size:13px;vertical-align:middle;}
+tbody tr.data-row:hover{background:#FAFCFB;}
+.row-pdv-header td{
+  background:var(--ink);color:#fff;font-weight:700;font-size:12.5px;
+  padding:9px 12px;
+}
+.row-pdv-header .count{color:#9BA2AC;font-weight:500;font-size:11.5px;margin-left:8px;}
+.row-colab-header td{background:#F6F7F4;font-weight:700;font-size:13px;padding:8px 12px;color:var(--ink);}
+.row-colab-header .add-link{float:right;font-weight:600;font-size:11.5px;color:var(--brand);background:none;border:none;}
+.row-colab-total td, .row-pdv-total td{text-align:right;font-weight:700;padding:7px 12px;font-size:12.5px;background:#FBFBF9;color:var(--ink-soft);}
+.row-pdv-total td{background:#F3F4F0;color:var(--ink);font-size:13px;}
+.cell-pdv{color:var(--ink-faint);font-size:11.5px;line-height:1.3;}
+.cell-colab{font-weight:600;}
+.cell-venc{display:flex;align-items:center;gap:6px;}
+.pill-carry{background:var(--amber-tint);color:var(--amber);font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:20px;white-space:nowrap;}
+.ref-select{border:1px solid var(--border);background:#fff;border-radius:6px;padding:4px 6px;font-size:12px;max-width:150px;}
+.obs-cell{color:var(--ink-faint);font-size:12.5px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:text;}
+.obs-cell:hover{color:var(--ink);}
+.icon-btn{background:transparent;border:none;color:var(--ink-faint);padding:4px;border-radius:6px;font-size:14px;}
+.icon-btn:hover{background:#F0F1EE;color:var(--ink);}
+.actions-cell{display:flex;gap:2px;}
+input[type=checkbox].desc-check{width:17px;height:17px;accent-color:var(--brand);cursor:pointer;}
+.empty-state{padding:50px 20px;text-align:center;color:var(--ink-faint);}
+
+/* ---------- Form ---------- */
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px 28px;box-shadow:var(--shadow);max-width:980px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 24px;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field.full{grid-column:1/-1;}
+.field label{font-size:12.5px;font-weight:700;color:var(--ink);}
+.field .hint{font-size:11.5px;color:var(--ink-faint);margin-top:-2px;}
+.field input, .field select, .field textarea{
+  border:1px solid var(--border);border-radius:9px;padding:10px 12px;font-size:13.5px;background:#fff;color:var(--ink);
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--brand-tint);border-color:var(--brand);}
+.field textarea{resize:vertical;min-height:70px;}
+.dropzone{
+  border:1.5px dashed var(--border);border-radius:10px;padding:22px;text-align:center;color:var(--ink-faint);
+  font-size:13px;cursor:pointer;background:#FAFAF8;
+}
+.dropzone:hover{border-color:var(--brand);color:var(--brand-dark);background:var(--brand-tint);}
+.dropzone.has-file{border-style:solid;border-color:var(--brand);color:var(--brand-dark);background:var(--brand-tint);}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;}
+
+/* ---------- Colaboradores ---------- */
+.colab-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+.colab-toolbar input[type=text]{min-width:230px;}
+.colab-toolbar .spacer{flex:1;}
+.pdv-group{margin-bottom:26px;}
+.pdv-group-title{font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.02em;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.pdv-group-title .count{font-weight:500;color:var(--ink-faint);text-transform:none;}
+.colab-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;display:flex;align-items:center;gap:18px;margin-bottom:8px;box-shadow:var(--shadow);
+}
+.colab-card .name{font-weight:700;font-size:13.5px;flex:1;min-width:190px;}
+.colab-card .name .pencil{font-size:11px;color:var(--ink-faint);margin-left:5px;font-weight:400;cursor:pointer;}
+.colab-card .sub{font-size:11.5px;color:var(--ink-faint);margin-top:2px;font-weight:500;}
+.colab-card .sub a{color:var(--amber);text-decoration:none;}
+.colab-metric{text-align:right;min-width:92px;}
+.colab-metric .l{font-size:10.5px;color:var(--ink-faint);font-weight:700;text-transform:uppercase;letter-spacing:.02em;}
+.colab-metric .v{font-size:13.5px;}
+.badge{font-size:11px;font-weight:700;padding:4px 11px;border-radius:30px;white-space:nowrap;}
+.badge.ok{background:var(--green-tint);color:var(--green);}
+.badge.pending{background:var(--amber-tint);color:var(--amber);}
+.colab-card .chev{color:var(--ink-faint);font-size:14px;}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(20,24,30,.45);display:flex;align-items:center;justify-content:center;
+  z-index:200;padding:20px;
+}
+.modal-backdrop[hidden]{display:none;}
+.modal{background:#fff;border-radius:14px;max-width:560px;width:100%;max-height:88vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.modal-head h3{margin:0;font-size:16px;}
+.modal-body{padding:20px 22px;}
+.modal-foot{padding:16px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px;}
+.modal-close{background:none;border:none;color:var(--ink-faint);font-size:18px;}
+.pdv-manage-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.pdv-manage-row input{flex:1;}
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:#fff;padding:11px 20px;border-radius:9px;font-size:13px;font-weight:600;
+  box-shadow:0 8px 24px rgba(0,0,0,.25); z-index:300; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+@media (max-width:980px){
+  .form-grid{grid-template-columns:1fr;}
+  .cards-row{grid-template-columns:repeat(2,1fr);}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">V</div>
+    <div class="brand-text">
+      <h1>Planilha de Vales</h1>
+      <p>Vales, adiantamentos &amp; retiradas internas — Grupo Macris</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn" id="btnLimparPeriodo">&#128465; Limpar período</button>
+    <button class="btn" id="btnImportarPlanilha">&#8593; Importar planilha</button>
+    <button class="btn" id="btnExportarExcel">&#8595; Exportar Excel</button>
+    <button class="btn" id="btnPdfMes">&#128196; PDF do mês</button>
+    <button class="btn" id="btnPdfGeral">&#128196; PDF geral</button>
+    <button class="btn" id="btnBackup">&#128190; Baixar backup</button>
+    <button class="btn" id="btnImportarBackup">&#11014; Importar backup</button>
+  </div>
+</header>
+
+<nav class="tabbar">
+  <button class="tab active" data-tab="lancamentos">Lançamentos do Mês</button>
+  <button class="tab" data-tab="novovale">+ Novo Vale</button>
+  <button class="tab" data-tab="colaboradores">Colaboradores</button>
+</nav>
+
+<!-- ===================== LANÇAMENTOS ===================== -->
+<section class="view" id="view-lancamentos">
+  <div class="period-row">
+    <div class="period-nav">
+      <button id="btnPrevMonth" title="Mês anterior">&#8249;</button>
+      <div class="period-label" id="periodLabel">—</div>
+      <button id="btnNextMonth" title="Próximo mês">&#8250;</button>
+    </div>
+    <button class="btn btn-brand" id="btnIncluirVale">+ Incluir vale</button>
+  </div>
+
+  <div class="filters-row">
+    <input type="text" id="fBusca" placeholder="Buscar colaborador ou PDV...">
+    <select id="fPdv"><option value="ALL">Todos os PDVs</option></select>
+    <select id="fReferente"><option value="ALL">Todos os referentes</option></select>
+    <select id="fStatus">
+      <option value="ALL">Descontado e pendente</option>
+      <option value="PEND">Somente pendentes</option>
+      <option value="DESC">Somente descontados</option>
+    </select>
+  </div>
+
+  <div class="cards-row">
+    <div class="card accent">
+      <div class="label">Total do mês</div>
+      <div class="value num brand" id="cardTotal">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <div class="label">Já descontado</div>
+      <div class="value num green" id="cardDescontado">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <div class="label">Pendente de desconto</div>
+      <div class="value num red" id="cardPendente">R$ 0,00</div>
+    </div>
+    <div class="card">
+      <div class="label">Colaboradores com lançamento</div>
+      <div class="value" id="cardColabs">0</div>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:13%">PDV</th>
+          <th style="width:16%">Colaborador</th>
+          <th>Parcela</th>
+          <th>Data do vale</th>
+          <th>Vencimento</th>
+          <th style="text-align:right">Valor</th>
+          <th>Referente</th>
+          <th>Descontado</th>
+          <th>Observação</th>
+          <th>Anexo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyLancamentos"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== NOVO VALE ===================== -->
+<section class="view" id="view-novovale" hidden>
+  <h2 style="margin:0 0 18px;font-size:19px;">Cadastrar novo vale</h2>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="field">
+        <label>PDV</label>
+        <select id="nvPdv"></select>
+      </div>
+      <div class="field">
+        <label>Nome completo do colaborador</label>
+        <input type="text" id="nvColaborador" list="dlColaboradores" placeholder="Ex.: Ketlhyn Vitória Martins Araújo">
+        <datalist id="dlColaboradores"></datalist>
+      </div>
+      <div class="field">
+        <label>Data do vale</label>
+        <input type="date" id="nvData">
+        <div class="hint">Apenas informativo (data de origem do vale)</div>
+      </div>
+      <div class="field">
+        <label>Mês do desconto</label>
+        <input type="month" id="nvMesDesconto">
+        <div class="hint">Mês em que a 1ª parcela será descontada — define em qual planilha o vale aparece</div>
+      </div>
+      <div class="field">
+        <label>Referente</label>
+        <select id="nvReferente"></select>
+      </div>
+      <div class="field">
+        <label>Valor total do vale (R$)</label>
+        <input type="number" step="0.01" min="0" id="nvValor" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Quantidade de parcelas</label>
+        <input type="number" min="1" step="1" id="nvParcelas" value="1">
+      </div>
+      <div class="field"></div>
+      <div class="field full">
+        <label>Observação</label>
+        <textarea id="nvObs" placeholder="Detalhes do vale, combinações de desconto, etc."></textarea>
+      </div>
+      <div class="field full">
+        <label>Anexar comprovante do vale (PDF, imagem ou Excel)</label>
+        <div class="dropzone" id="nvDropzone">Clique para selecionar um arquivo (PDF, JPG, PNG ou Excel)</div>
+        <input type="file" id="nvAnexoInput" accept=".pdf,.jpg,.jpeg,.png,.xlsx,.xls" style="display:none">
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-ghost" id="nvLimpar">Limpar</button>
+      <button class="btn btn-light" id="nvPromissorias">&#128204; Gerar promissórias</button>
+      <button class="btn btn-brand" id="nvSalvar">Salvar vale</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== COLABORADORES ===================== -->
+<section class="view" id="view-colaboradores" hidden>
+  <h2 style="margin:0 0 16px;font-size:19px;">Colaboradores por PDV &amp; saldo restante</h2>
+  <div class="colab-toolbar">
+    <input type="text" id="cBusca" placeholder="Buscar colaborador ou PDV...">
+    <select id="cStatus">
+      <option value="ALL">Todos os status</option>
+      <option value="PEND">Em andamento</option>
+      <option value="OK">Sem pendência</option>
+    </select>
+    <div class="spacer"></div>
+    <button class="btn btn-light" id="btnGerenciarPdvs">&#128202; Gerenciar PDVs</button>
+    <button class="btn btn-light" id="btnImportarCadastro">&#128190; Importar cadastro</button>
+    <button class="btn btn-brand" id="btnNovoColaborador">+ Novo colaborador</button>
+  </div>
+  <div id="colabList"></div>
+</section>
+
+<!-- hidden inputs -->
+<input type="file" id="fileImportarPlanilha" accept=".xlsx,.xls,.csv" style="display:none">
+<input type="file" id="fileImportarBackup" accept=".json" style="display:none">
+<input type="file" id="fileImportarCadastro" accept=".xlsx,.xls,.csv" style="display:none">
+
+<!-- Modal: PDV manager -->
+<div class="modal-backdrop" id="modalPdv" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>Gerenciar PDVs</h3><button class="modal-close" data-close="modalPdv">&times;</button></div>
+    <div class="modal-body">
+      <div id="pdvManageList"></div>
+      <div class="pdv-manage-row" style="margin-top:14px;">
+        <input type="text" id="novoPdvNome" placeholder="Ex.: 90 · NOVA LOJA">
+        <button class="btn btn-brand btn-sm" id="btnAddPdv">Adicionar</button>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-light" data-close="modalPdv">Fechar</button></div>
+  </div>
+</div>
+
+<!-- Modal: colaborador editor -->
+<div class="modal-backdrop" id="modalColab" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3 id="modalColabTitle">Novo colaborador</h3><button class="modal-close" data-close="modalColab">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr;gap:14px;">
+        <div class="field"><label>Nome completo</label><input type="text" id="mcNome"></div>
+        <div class="field"><label>PDV</label><select id="mcPdv"></select></div>
+        <div class="field"><label>CPF</label><input type="text" id="mcCpf" placeholder="000.000.000-00"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-light" data-close="modalColab">Cancelar</button>
+      <button class="btn btn-brand" id="mcSalvar">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: entry editor -->
+<div class="modal-backdrop" id="modalEntry" hidden>
+  <div class="modal">
+    <div class="modal-head"><h3>Editar lançamento</h3><button class="modal-close" data-close="modalEntry">&times;</button></div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:14px;">
+        <div class="field"><label>PDV</label><select id="mePdv"></select></div>
+        <div class="field"><label>Colaborador</label><input type="text" id="meColaborador"></div>
+        <div class="field"><label>Parcela</label><input type="text" id="meParcela" placeholder="1/1"></div>
+        <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="meValor"></div>
+        <div class="field"><label>Data do vale</label><input type="date" id="meData"></div>
+        <div class="field"><label>Vencimento</label><input type="date" id="meVencimento"></div>
+        <div class="field"><label>Referente</label><select id="meReferente"></select></div>
+        <div class="field"><label>Descontado</label>
+          <select id="meDescontado"><option value="nao">Não</option><option value="sim">Sim</option></select>
+        </div>
+        <div class="field full"><label>Observação</label><textarea id="meObs"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger" id="meExcluir">Excluir lançamento</button>
+      <button class="btn btn-light" data-close="modalEntry">Cancelar</button>
+      <button class="btn btn-brand" id="meSalvar">Salvar alterações</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Planilha de Vales — Grupo Macris (novo projeto standalone)
+   ========================================================= */
+(function(){
+"use strict";
+
+var STORAGE_KEY = 'planilhaValesMacris_v2';
+var MONTH_NAMES = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+var MONTH_ABBR = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+
+var REFERENTE_BASE = [
+  'ADIANTAMENTO DE SALÁRIO','RETIRADA INTERNA','RETIRADA EXTERNA','COMPRA CARTÃO EMPRESA',
+  'VIAGEM','PREJUÍZO','COBRANÇA ERRADA','COPARTICIPAÇÃO PLANO','EMPRÉSTIMO MACRIS','RECÁLCULO PARCELAS'
+];
+
+var SEED_ENTRIES = [{"id": "imp1", "month": "2026-10", "pdv": "79 · PORTO VELHO ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "1/1", "dataVale": "05/11/2026", "vencimento": "01/09/2026", "valor": 349.98, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIROU UM RELOGIO NO PVH QSQ, REFERENCIA RE.MT.1913.0707"}, {"id": "imp2", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "WESCLEY ARAUJO DO CARMO", "parcela": "1/1", "dataVale": "26/09/2026", "vencimento": "01/09/2026", "valor": 4.98, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp3", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "MILENA MAIARA SANTOS NASCIMENTO", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 250.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp4", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "1/1", "dataVale": "25/09/2026", "vencimento": "01/09/2026", "valor": 68.98, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": "Diferença referente ao voucher de 5 anos de marca."}, {"id": "imp5", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "MILENA MAIARA SANTOS NASCIMENTO", "parcela": "1/1", "dataVale": "23/09/2026", "vencimento": "05/10/2026", "valor": 385.83, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": "Atualização da habilitação"}, {"id": "imp6", "month": "2026-10", "pdv": "72 · PORTO VELHO QUIOSQUE", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "1/10", "dataVale": "29/09/2026", "vencimento": "05/10/2026", "valor": 173.0, "referente": "PREJUÍZO", "descontado": false, "observacao": "quitação de valores de diferença de caixa"}, {"id": "imp7", "month": "2026-10", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "2/10", "dataVale": "29/09/2026", "vencimento": "05/11/2026", "valor": 173.0, "referente": "PREJUÍZO", "descontado": false, "observacao": "quitação de valores de diferença de caixa"}, {"id": "imp8", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "THALYSON BENTO DE SOUSA", "parcela": "1/1", "dataVale": "06/09/2026", "vencimento": "01/09/2026", "valor": 70.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp9", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": "25/09/2026", "vencimento": "01/10/2026", "valor": 60.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "REFERENTE À COBRANÇA INCORRETA OCORRIDA NO DIA 25/09/2026, REFERENTE AO DOCUMENTO Nº 2837."}, {"id": "imp10", "month": "2026-10", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "1/5", "dataVale": null, "vencimento": null, "valor": 169.39, "referente": "INVENTARIO", "descontado": false, "observacao": ""}, {"id": "imp11", "month": "2026-10", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "2/10", "dataVale": null, "vencimento": null, "valor": 173.0, "referente": "DIFERENÇA DE CAIXA", "descontado": false, "observacao": ""}, {"id": "imp12", "month": "2026-10", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "4/4", "dataVale": null, "vencimento": null, "valor": 318.14, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp13", "month": "2026-10", "pdv": "72 · PORTO VELHO QUIOSQUE", "colaborador": "RAQUEL FRANKLIN MENDES FEREIRA", "parcela": "1/1", "dataVale": "28/09/2026", "vencimento": "01/09/2026", "valor": 19.98, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "cobrança errada"}, {"id": "imp14", "month": "2026-10", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 5.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp15", "month": "2026-10", "pdv": "79-PVH ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "4/4", "dataVale": null, "vencimento": null, "valor": 142.25, "referente": "RETIRADA", "descontado": false, "observacao": ""}, {"id": "imp16", "month": "2026-10", "pdv": "79-PVH ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 349.98, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "QSQ"}, {"id": "imp17", "month": "2026-10", "pdv": "79-PVH ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "1/3", "dataVale": null, "vencimento": null, "valor": 139.99, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "KINGS"}, {"id": "imp18", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/2", "dataVale": "28/09/2026", "vencimento": "05/10/2026", "valor": 192.49, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "REFERENTE À RETIRADA INTERNA DE UM RELÓGIO, DE REFERÊNCIA RE.MT.1907.0101."}, {"id": "imp19", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "2/2", "dataVale": "28/09/2026", "vencimento": "05/11/2026", "valor": 192.5, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "REFERENTE À RETIRADA INTERNA DE UM RELÓGIO, DE REFERÊNCIA RE.MT.1907.0101."}, {"id": "imp20", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "05/10/2026", "valor": 5.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp21", "month": "2026-10", "pdv": "LOLA KINGS", "colaborador": "MILENA MAIARA SANTOS NASCIMENTO", "parcela": "1/1", "dataVale": "17/09/2026", "vencimento": "01/10/2026", "valor": 300.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": "RENOVAÇÃO HABILIRAÇÃO - PARA DESCONTO EM RESCISÃO"}, {"id": "imp22", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "1/3", "dataVale": "03/09/2026", "vencimento": "06/10/2026", "valor": 166.01, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": "PASSAGEM EUCATUR"}, {"id": "imp23", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "2/3", "dataVale": "03/09/2026", "vencimento": "06/11/2026", "valor": 166.01, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": "PASSAGEM EUCATUR"}, {"id": "imp24", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "ISLAYNE PEREIRA MENEZES DA SILVA", "parcela": "1/1", "dataVale": "25/08/2026", "vencimento": "05/10/2026", "valor": 70.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp25", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "ISLAYNE MENEZES", "parcela": "1/1", "dataVale": "25/08/2026", "vencimento": "05/10/2026", "valor": 84.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp26", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "1/1", "dataVale": "06/09/2026", "vencimento": "06/10/2026", "valor": 50.0, "referente": "PREJUÍZO", "descontado": false, "observacao": "ERRO LENTE"}, {"id": "imp27", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "1/1", "dataVale": "06/09/2026", "vencimento": "06/10/2026", "valor": 50.0, "referente": "PREJUÍZO", "descontado": false, "observacao": "ERRO LENTE"}, {"id": "imp28", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO", "parcela": "1/1", "dataVale": "02/09/2026", "vencimento": "05/10/2026", "valor": 48.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp29", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO", "parcela": "1/3", "dataVale": "03/08/2026", "vencimento": "07/10/2026", "valor": 0.0, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp30", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "5/24", "dataVale": "01/08/2025", "vencimento": "07/01/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp31", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "6/24", "dataVale": "01/08/2025", "vencimento": "07/02/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp32", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "7/24", "dataVale": "01/08/2025", "vencimento": "07/03/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp33", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "8/24", "dataVale": "01/08/2025", "vencimento": "07/04/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp34", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "9/24", "dataVale": "01/08/2025", "vencimento": "07/05/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp35", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "10/24", "dataVale": "01/08/2025", "vencimento": "07/06/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp36", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "11/24", "dataVale": "01/08/2025", "vencimento": "07/07/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp37", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "12/24", "dataVale": "01/08/2025", "vencimento": "07/08/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp38", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "13/24", "dataVale": "01/08/2025", "vencimento": "07/09/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp39", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "14/24", "dataVale": "01/08/2025", "vencimento": "07/10/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp40", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "AMANDA APARECIDA PELEGRIN", "parcela": "15/24", "dataVale": "01/08/2025", "vencimento": "06/11/2026", "valor": 265.83, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "RECALCULO DE PARCELAS"}, {"id": "imp41", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "TAINARA GOMES ARAÚJO", "parcela": "1/1", "dataVale": "25/09/2026", "vencimento": "01/09/2026", "valor": 100.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp42", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "05/10/2026", "valor": 4.95, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp43", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "05/10/2026", "valor": 10.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp44", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "05/10/2026", "valor": 40.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp45", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "ANDERSON DANTAS DE SOUZA RIOJAS", "parcela": "1/1", "dataVale": "03/09/2026", "vencimento": "06/10/2026", "valor": 29.2, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp46", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "VITOR G. GUIMARÃES GREGO", "parcela": "1/5", "dataVale": "06/08/2026", "vencimento": "06/10/2026", "valor": 55.02, "referente": "COPARTICIPAÇÃO PLANO", "descontado": false, "observacao": "COOPARTICIPAÇÃO PLANO"}, {"id": "imp47", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "VITOR G. GUIMARÃES GREGO", "parcela": "2/5", "dataVale": "06/08/2026", "vencimento": "04/11/2026", "valor": 55.02, "referente": "COPARTICIPAÇÃO PLANO", "descontado": false, "observacao": "COOPARTICIPAÇÃO"}, {"id": "imp48", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "ISLAYNE PEREIRA MENEZES DA SILVA", "parcela": "1/1", "dataVale": "25/08/2026", "vencimento": "06/10/2026", "valor": 70.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp49", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "ISLAYNE PEREIRA MENEZES DA SILVA", "parcela": "1/1", "dataVale": "25/08/2026", "vencimento": "06/10/2026", "valor": 84.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp50", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "ANA PEROLA GOMES ARAUJO", "parcela": "4/4", "dataVale": "06/02/2026", "vencimento": "08/10/2026", "valor": 192.49, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp51", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "2/3", "dataVale": "03/08/2026", "vencimento": "08/10/2026", "valor": 116.66, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA VIA VERDE LOJA"}, {"id": "imp52", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "3/3", "dataVale": "03/08/2026", "vencimento": "06/11/2026", "valor": 116.66, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA VIA VERDE LOJA"}, {"id": "imp53", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "1/1", "dataVale": "02/09/2026", "vencimento": "06/10/2026", "valor": 48.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp54", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "3/5", "dataVale": "29/07/2026", "vencimento": "06/10/2026", "valor": 1110.28, "referente": "RECÁLCULO PARCELAS", "descontado": false, "observacao": "RECALCULO DE PARCELAS + ADIANTAMENTO DE SÁLARIO"}, {"id": "imp55", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "4/5", "dataVale": "29/07/2026", "vencimento": "06/11/2026", "valor": 1110.28, "referente": "RECÁLCULO PARCELAS", "descontado": false, "observacao": "RECALCULO DE PARCELAS + ADIANTAMENTO DE SÁLARIO"}, {"id": "imp56", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "06/10/2026", "valor": 5.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp57", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "06/10/2026", "valor": 4.95, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp58", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": "08/09/2026", "vencimento": "06/10/2026", "valor": 10.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp59", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": "06/10/2026", "vencimento": "06/10/2026", "valor": 40.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp60", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "ANA PEROLA GOMES ARAUJO", "parcela": "3/4", "dataVale": "16/07/2026", "vencimento": "07/10/2026", "valor": 150.49, "referente": "PREJUÍZO", "descontado": false, "observacao": "INVENTÁRIO"}, {"id": "imp61", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "ANA PEROLA GOMES ARAUJO", "parcela": "4/4", "dataVale": "16/07/2026", "vencimento": "06/11/2026", "valor": 150.49, "referente": "PREJUÍZO", "descontado": false, "observacao": "INVENTÁRIO"}, {"id": "imp62", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "3/4", "dataVale": "05/03/2026", "vencimento": "07/10/2026", "valor": 69.99, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp63", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "4/4", "dataVale": "05/03/2026", "vencimento": "06/11/2026", "valor": 69.99, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp64", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "3/10", "dataVale": "09/05/2026", "vencimento": "06/10/2026", "valor": 361.53, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp65", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "4/10", "dataVale": "09/05/2026", "vencimento": "06/11/2026", "valor": 361.53, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp66", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "2/6", "dataVale": "15/08/2026", "vencimento": "07/10/2026", "valor": 666.66, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp67", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "3/6", "dataVale": "15/08/2026", "vencimento": "06/11/2026", "valor": 666.66, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp68", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "BIANCA DE OLIVEIRA SILVA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 100.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp69", "month": "2026-10", "pdv": "79 · PORTO VELHO ÓTICA", "colaborador": "ADALVINA COURINOS TEIXEIRA", "parcela": "3/4", "dataVale": "31/07/2026", "vencimento": "07/10/2026", "valor": 281.56, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp70", "month": "2026-10", "pdv": "79 · PORTO VELHO ÓTICA", "colaborador": "ADALVINA COURINOS TEIXEIRA", "parcela": "4/4", "dataVale": "31/07/2026", "vencimento": "06/11/2026", "valor": 281.56, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp71", "month": "2026-10", "pdv": "79 · PORTO VELHO ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "5/5", "dataVale": "14/05/2026", "vencimento": "08/10/2026", "valor": 563.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp72", "month": "2026-10", "pdv": "79 · PORTO VELHO ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "3/4", "dataVale": "31/07/2026", "vencimento": "07/10/2026", "valor": 142.25, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp73", "month": "2026-10", "pdv": "79 · PORTO VELHO ÓTICA", "colaborador": "GABRIELLE CRISTINA ZIMMER DA SILVA", "parcela": "4/4", "dataVale": "31/07/2026", "vencimento": "06/11/2026", "valor": 142.25, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp74", "month": "2026-10", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "LETICIA MARGARIDA MASCHIO BRAGA", "parcela": "3/3", "dataVale": "15/07/2026", "vencimento": "07/10/2026", "valor": 100.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp75", "month": "2026-10", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "LETICIA MARGARIDA MASCHIO BRAGA", "parcela": "2/5", "dataVale": "14/08/2026", "vencimento": "07/10/2026", "valor": 200.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp76", "month": "2026-10", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "LETICIA MARGARIDA MASCHIO BRAGA", "parcela": "3/5", "dataVale": "14/08/2026", "vencimento": "06/11/2026", "valor": 200.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp77", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "2/2", "dataVale": "08/08/2026", "vencimento": "07/10/2026", "valor": 43.36, "referente": "COPARTICIPAÇÃO PLANO", "descontado": false, "observacao": ""}, {"id": "imp78", "month": "2026-10", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "SABRINA BRITO DIAS RIBEIRO", "parcela": "2/4", "dataVale": "06/08/2026", "vencimento": "07/10/2026", "valor": 49.6, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "DESC REF COBRANÇA INCORRETA DE CLIENTE"}, {"id": "imp79", "month": "2026-10", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "SABRINA BRITO DIAS RIBEIRO", "parcela": "3/4", "dataVale": "06/08/2026", "vencimento": "06/11/2026", "valor": 49.6, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "DESC REF COBRANÇA INCORRETA DE CLIENTE"}, {"id": "imp80", "month": "2026-10", "pdv": "81 · CACOAL LOJA", "colaborador": "LETICIA NAUANY MENDES CASTELO BRANCO", "parcela": "3/4", "dataVale": "15/07/2026", "vencimento": "07/10/2026", "valor": 150.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp81", "month": "2026-10", "pdv": "81 · CACOAL LOJA", "colaborador": "LETICIA NAUANY MENDES CASTELO BRANCO", "parcela": "4/4", "dataVale": "15/07/2026", "vencimento": "06/11/2026", "valor": 150.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp82", "month": "2026-10", "pdv": "82 · VILHENA QUIOSQUE", "colaborador": "ANA CAROLYNA RIGO VIANA", "parcela": "4/6", "dataVale": "28/02/2026", "vencimento": "08/07/2026", "valor": 351.64, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp83", "month": "2026-10", "pdv": "82 · VILHENA QUIOSQUE", "colaborador": "ANA CAROLYNA RIGO VIANA", "parcela": "5/6", "dataVale": "28/02/2026", "vencimento": "06/08/2026", "valor": 351.64, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp84", "month": "2026-10", "pdv": "82 · VILHENA QUIOSQUE", "colaborador": "ANA CAROLYNA RIGO VIANA", "parcela": "6/6", "dataVale": "28/02/2026", "vencimento": "07/09/2026", "valor": 351.64, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp85", "month": "2026-10", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "KELLY ANTONIA DA SILVA BATISTA", "parcela": "2/5", "dataVale": "08/08/2026", "vencimento": "07/10/2026", "valor": 112.01, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp86", "month": "2026-10", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "KELLY ANTONIA DA SILVA BATISTA", "parcela": "3/5", "dataVale": "08/08/2026", "vencimento": "06/11/2026", "valor": 112.01, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp87", "month": "2026-10", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "AMANDA DA COSTA FREIRE", "parcela": "2/3", "dataVale": "08/08/2026", "vencimento": "07/10/2026", "valor": 116.66, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp88", "month": "2026-10", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "AMANDA DA COSTA FREIRE", "parcela": "3/3", "dataVale": "08/08/2026", "vencimento": "06/11/2026", "valor": 116.68, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp89", "month": "2026-10", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "BRENA DA SILVA SANTOS", "parcela": "2/2", "dataVale": "08/08/2026", "vencimento": "09/10/2026", "valor": 140.0, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp90", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "7/12", "dataVale": "13/03/2026", "vencimento": "07/10/2026", "valor": 199.0, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp91", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "8/12", "dataVale": "13/03/2026", "vencimento": "06/11/2026", "valor": 199.0, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp92", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "2/2", "dataVale": "08/08/2026", "vencimento": "07/10/2026", "valor": 135.8, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA LOJA RESERVA"}, {"id": "imp93", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "STÉFANIE GUIMARÃES", "parcela": "2/2", "dataVale": "08/08/2026", "vencimento": "06/10/2026", "valor": 40.0, "referente": "COPARTICIPAÇÃO PLANO", "descontado": false, "observacao": ""}, {"id": "imp94", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "SARAH HELLEN COSTA MARQUES", "parcela": "3/6", "dataVale": "14/05/2026", "vencimento": "07/09/2026", "valor": 233.33, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "HABILITAÇÃO/CNH"}, {"id": "imp95", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "SARAH HELLEN COSTA MARQUES", "parcela": "4/6", "dataVale": "14/05/2026", "vencimento": "07/10/2026", "valor": 233.33, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "HABILITAÇÃO/CNH"}, {"id": "imp96", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "SARAH HELLEN COSTA MARQUES", "parcela": "5/6", "dataVale": "14/05/2026", "vencimento": "06/11/2026", "valor": 233.33, "referente": "EMPRÉSTIMO MACRIS", "descontado": false, "observacao": "HABILITAÇÃO/CNH"}, {"id": "imp97", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "SARAH HELLEN COSTA MARQUES", "parcela": "4/6", "dataVale": "06/06/2026", "vencimento": "07/10/2026", "valor": 216.66, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp98", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "SARAH HELLEN COSTA MARQUES", "parcela": "5/6", "dataVale": "06/06/2026", "vencimento": "07/11/2026", "valor": 216.66, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp99", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "SAMIRA COSTA MARQUES RIBEIRO", "parcela": "2/4", "dataVale": "22/07/2026", "vencimento": "07/10/2026", "valor": 246.27, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA OTICA"}, {"id": "imp100", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "SAMIRA COSTA MARQUES RIBEIRO", "parcela": "3/4", "dataVale": "22/07/2026", "vencimento": "06/11/2026", "valor": 246.27, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA OTICA"}, {"id": "imp101", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": "26/09/2026", "vencimento": "01/10/2026", "valor": 100.01, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "REFERENTE À COBRANÇA INCORRETA OCORRIDA NO DIA 26/09/2026, REFERENTE AO DOCUMENTO Nº 18759.\n\nA VENDEDORA NICOLE SE AUSENTOU MOMENTANEAMENTE DO PONTO DE VENDA PARA IR AO BANHEIRO, E A VENDEDORA LUCILENI FINALIZOU A VENDA EM SEU LUGAR, OCASIONANDO A COBRANÇA INCORRETA DO VALOR.\n\nA VENDEDORA LUCILENI DECLARA ESTAR CIENTE DO OCORRIDO E CONCORDA EM ASSUMIR O PREJUÍZO DECORRENTE DA COBRANÇA INCORRETA."}, {"id": "imp102", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "CARLOS EDUARDO FERNANDES MACEDO DE OLIVEIRA", "parcela": "1/3", "dataVale": "29/09/2026", "vencimento": "05/10/2026", "valor": 158.0, "referente": "PREJUÍZO", "descontado": false, "observacao": "conferência e apuração dos valores de diferença de caixas."}, {"id": "imp103", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "SARAH HELLEN COSTA MARQUES", "parcela": "1/1", "dataVale": "06/08/2026", "vencimento": "06/10/2026", "valor": 836.98, "referente": "COPARTICIPAÇÃO PLANO", "descontado": false, "observacao": "COOPARTICIPAÇÃO REF MESES JUNHO E JULHO/2026"}, {"id": "imp104", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "ANDERSON DANTAS DE SOUZA RIOJAS", "parcela": "3/10", "dataVale": "07/03/2026", "vencimento": "07/10/2026", "valor": 296.63, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp105", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "ANDERSON DANTAS DE SOUZA RIOJAS", "parcela": "4/10", "dataVale": "07/03/2026", "vencimento": "06/11/2026", "valor": 296.63, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp106", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "ANDERSON DANTAS DE SOUZA RIOJAS", "parcela": "1/1", "dataVale": "21/08/2026", "vencimento": "06/10/2026", "valor": 350.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp107", "month": "2026-10", "pdv": "MARKETING", "colaborador": "KAUAN MATHEUS", "parcela": "1/6", "dataVale": "01/08/2026", "vencimento": "07/09/2026", "valor": 199.63, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA LOJA RESERVA"}, {"id": "imp108", "month": "2026-10", "pdv": "MARKETING", "colaborador": "KAUAN MATHEUS", "parcela": "2/6", "dataVale": "01/08/2026", "vencimento": "07/10/2026", "valor": 199.63, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA LOJA RESERVA"}, {"id": "imp109", "month": "2026-10", "pdv": "MARKETING", "colaborador": "KAUAN MATHEUS", "parcela": "3/6", "dataVale": "01/08/2026", "vencimento": "06/11/2026", "valor": 199.63, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": "RETIRADA LOJA RESERVA"}, {"id": "imp110", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "CARLOS EDUARDO FERNANDES MACEDO DE OLIVEIRA", "parcela": "5/8", "dataVale": "06/05/2026", "vencimento": "06/10/2026", "valor": 186.74, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp111", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "CARLOS EDUARDO FERNANDES MACEDO DE OLIVEIRA", "parcela": "6/8", "dataVale": "06/05/2026", "vencimento": "06/11/2026", "valor": 186.74, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp112", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "SARA JANAI LAMARAO DA SILVA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 60.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp113", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "BÁRBARA MIRELA DA SILVA PAIM", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 250.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp114", "month": "2026-10", "pdv": "87 · LOJA KINGS", "colaborador": "ARTUR MAIA DA SILVA LAGES", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 250.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp115", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "ANA PEROLA GOMES ARAUJO", "parcela": "1/1", "dataVale": "17/09/2026", "vencimento": "01/09/2026", "valor": 450.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp116", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "ISLAYNE PEREIRA MENEZES DA SILVA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 250.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp117", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "ANA GABRIELE SILVA DE SOUZA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 150.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp118", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "KENUE ALVES AGORRETA LIMA", "parcela": "1/3", "dataVale": "10/08/2026", "vencimento": "06/10/2026", "valor": 139.99, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": "RETIRADA DE UM RELÓGIO, REF RE.MT.1825.2222"}, {"id": "imp119", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "KENUE ALVES AGORRETA LIMA", "parcela": "2/3", "dataVale": "10/08/2026", "vencimento": "06/11/2026", "valor": 139.99, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": "RETIRADA DE UM RELÓGIO, REF RE.MT.1825.2222"}, {"id": "imp120", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "TAIANE SILVA CAVALCANTE", "parcela": "1/1", "dataVale": "21/09/2026", "vencimento": "01/09/2026", "valor": 59.62, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "cobrança errada"}, {"id": "imp121", "month": "2026-10", "pdv": "74 · PORTO VELHO LOJA", "colaborador": "BRUNA LETICIA LANES PESSOA", "parcela": "1/1", "dataVale": "21/09/2026", "vencimento": "01/09/2026", "valor": 40.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp122", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "DAVI SADIM DE LIMA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 200.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp123", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "LUAN AKYM PEREIRA DE LIMA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 150.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp124", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "ANDERSON DANTAS DE SOUZA RIOJAS", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 350.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp125", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "KENUE ALVES AGORRETA LIMA", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 250.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp126", "month": "2026-10", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "LUANA NERES EVARISTO", "parcela": "1/1", "dataVale": "18/09/2026", "vencimento": "01/09/2026", "valor": 150.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp127", "month": "2026-10", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "SABRINA BRITO DIAS RIBEIRO", "parcela": "1/1", "dataVale": "21/09/2026", "vencimento": "01/09/2026", "valor": 200.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp128", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "1/3", "dataVale": "03/09/2026", "vencimento": "05/10/2026", "valor": 166.01, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": "passagem de onibus, eucatur"}, {"id": "imp129", "month": "2026-10", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA AMORIM CARVALHO", "parcela": "2/3", "dataVale": "03/09/2026", "vencimento": "05/11/2026", "valor": 166.01, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": "passagem de onibus, eucatur"}, {"id": "imp130", "month": "2026-10", "pdv": "90 · LOJA RESERVA", "colaborador": "DAVI SADIM DE LIMA", "parcela": "1/1", "dataVale": "09/09/2026", "vencimento": "01/09/2026", "valor": 29.85, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp131", "month": "2026-10", "pdv": "69 · VIA VERDE LOJA", "colaborador": "THALYSON BENTO DE SOUSA", "parcela": "1/1", "dataVale": "27/09/2026", "vencimento": "01/09/2026", "valor": 0.01, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": "COBRANÇA ERRADA"}, {"id": "imp132", "month": "2026-11", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "2/10", "dataVale": "29/09/2026", "vencimento": "05/11/2026", "valor": 173.0, "referente": "PREJUÍZO", "descontado": false, "observacao": ""}, {"id": "imp133", "month": "2026-11", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "1/5", "dataVale": null, "vencimento": null, "valor": 169.39, "referente": "INVENTARIO", "descontado": false, "observacao": ""}, {"id": "imp134", "month": "2026-11", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "2/10", "dataVale": null, "vencimento": null, "valor": 173.0, "referente": "DIFERENÇA DE CAIXA", "descontado": false, "observacao": ""}, {"id": "imp135", "month": "2026-11", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "4/4", "dataVale": null, "vencimento": null, "valor": 318.14, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp136", "month": "2026-11", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 5.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp137", "month": "2026-11", "pdv": "79- PVH ÓTICA", "colaborador": "ANIELY ESTEVAM COSTA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 22.5, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp138", "month": "2026-11", "pdv": "79-PVH ÓTICA", "colaborador": "GABRIELLE CRISTINA Z. DA SILVA", "parcela": "4/4", "dataVale": null, "vencimento": null, "valor": 142.25, "referente": "RETIRADA", "descontado": false, "observacao": ""}, {"id": "imp139", "month": "2026-11", "pdv": "79-PVH ÓTICA", "colaborador": "GABRIELLE CRISTINA Z. DA SILVA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 349.98, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": ""}, {"id": "imp140", "month": "2026-11", "pdv": "79-PVH ÓTICA", "colaborador": "GABRIELLE CRISTINA Z. DA SILVA", "parcela": "1/3", "dataVale": null, "vencimento": null, "valor": 139.99, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": ""}, {"id": "imp141", "month": "2026-11", "pdv": "79-PVH ÓTICA", "colaborador": "ADALVINA COURINOS TEIXEIRA", "parcela": "4/4", "dataVale": null, "vencimento": null, "valor": 281.56, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp142", "month": "2026-11", "pdv": "79-PVH ÓTICA", "colaborador": "ADALVINA COURINOS TEIXEIRA", "parcela": "1/2", "dataVale": null, "vencimento": null, "valor": 103.21, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp143", "month": "2026-11", "pdv": "79-PVH ÓTICA", "colaborador": "ADALVINA COURINOS TEIXEIRA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 68.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp144", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "3/3", "dataVale": null, "vencimento": null, "valor": 48.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp145", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "4/5", "dataVale": null, "vencimento": null, "valor": 1110.28, "referente": "RECALCULO VALES", "descontado": false, "observacao": ""}, {"id": "imp146", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "2/3", "dataVale": null, "vencimento": null, "valor": 116.66, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp147", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 50.0, "referente": "PREJUIZO LENTE", "descontado": false, "observacao": ""}, {"id": "imp148", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "NICOLE ANJO DA SILVA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 100.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp149", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "2/2", "dataVale": null, "vencimento": null, "valor": 192.5, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp150", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 14.98, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp151", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 4.46, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp152", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "LUCILENI PASSOS VARGAS", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 0.01, "referente": "", "descontado": false, "observacao": ""}, {"id": "imp153", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "3/4", "dataVale": null, "vencimento": null, "valor": 69.99, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp154", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "4/10", "dataVale": null, "vencimento": null, "valor": 361.53, "referente": "COMPRA NO CARTÃO", "descontado": false, "observacao": ""}, {"id": "imp155", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "3/6", "dataVale": null, "vencimento": null, "valor": 666.66, "referente": "ADIANTAMENTO", "descontado": false, "observacao": ""}, {"id": "imp156", "month": "2026-11", "pdv": "74 - PVH LOJA", "colaborador": "KETLHYN VITORIA MARTINS ARAUJO", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 68.98, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp157", "month": "2026-11", "pdv": "69 - VIA VERDE", "colaborador": "BIANCA DE OLIVEIRA SILVA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 0.02, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp158", "month": "2026-11", "pdv": "70 · ARIQUEMES QUIOSQUE", "colaborador": "ANA PEROLA GOMES ARAUJO", "parcela": "4/4", "dataVale": null, "vencimento": null, "valor": 150.49, "referente": "PREJUÍZO", "descontado": false, "observacao": ""}, {"id": "imp159", "month": "2026-11", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "LETICIA MARGARIDA MASCHIO BRAGA", "parcela": "3/5", "dataVale": null, "vencimento": null, "valor": 200.0, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp160", "month": "2026-11", "pdv": "81 · JI PARANÁ LOJA DE RUA", "colaborador": "LETICIA MARGARIDA MASCHIO BRAGA", "parcela": "1/4", "dataVale": "22/10/2026", "vencimento": null, "valor": 281.75, "referente": "ADIANTAMENTO DE SALÁRIO", "descontado": false, "observacao": ""}, {"id": "imp161", "month": "2026-11", "pdv": "80 · JI PARANÁ LOJA DE RUA", "colaborador": "SABRINA BRITO DIAS RIBEIRO", "parcela": "3/4", "dataVale": "06/08/2026", "vencimento": "06/11/2026", "valor": 49.6, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp162", "month": "2026-11", "pdv": "81 · CACOAL LOJA", "colaborador": "LETICIA NAUANY MENDES CASTELO BRANCO", "parcela": "4/4", "dataVale": "15/07/2026", "vencimento": "06/11/2026", "valor": 150.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp163", "month": "2026-11", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "KELLY ANTONIA DA SILVA BATISTA", "parcela": "3/5", "dataVale": "08/08/2026", "vencimento": "06/11/2026", "valor": 112.01, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp164", "month": "2026-11", "pdv": "84 · AVIÁRIO QUIOSQUE", "colaborador": "AMANDA DA COSTA FREIRE", "parcela": "3/3", "dataVale": "08/08/2026", "vencimento": "06/11/2026", "valor": 116.68, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp165", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA A. CARVALHO", "parcela": "2/3", "dataVale": "03/09/2026", "vencimento": "06/11/2026", "valor": 166.01, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp166", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA A. CARVALHO", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 500.0, "referente": "ADIANTAMENTO SALARIAL", "descontado": false, "observacao": ""}, {"id": "imp167", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA A. CARVALHO", "parcela": "2/3", "dataVale": "03/09/2026", "vencimento": "06/11/2026", "valor": 166.01, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp168", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "JHENIFFER FABIANA A. CARVALHO", "parcela": "8/12", "dataVale": "13/03/2026", "vencimento": "06/11/2026", "valor": 199.0, "referente": "COMPRA CARTÃO EMPRESA", "descontado": false, "observacao": ""}, {"id": "imp169", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "IASMIM RIBEIRO DE SOUZA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 600.0, "referente": "ADIANTAMENTO SALARIAL", "descontado": false, "observacao": ""}, {"id": "imp170", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "IASMIM RIBEIRO DE SOUZA", "parcela": "1/3", "dataVale": null, "vencimento": null, "valor": 128.34, "referente": "", "descontado": false, "observacao": ""}, {"id": "imp171", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "MILENA MAIARA SANTOS NASCIMENTO", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 22.5, "referente": "LANÇAMENTO ERRADO", "descontado": false, "observacao": ""}, {"id": "imp172", "month": "2026-11", "pdv": "86 · ESCRITÓRIO MACRIS", "colaborador": "TAINARA GOMES ARAUJO", "parcela": "1/2", "dataVale": null, "vencimento": null, "valor": 100.0, "referente": "ADIANTAMENTO", "descontado": false, "observacao": ""}, {"id": "imp173", "month": "2026-11", "pdv": "87 · LOJA KINGS", "colaborador": "CARLOS EDUARDO F. M. DE OLIVEIRA", "parcela": "6/8", "dataVale": "06/05/2026", "vencimento": "06/11/2026", "valor": 186.74, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp174", "month": "2026-11", "pdv": "87 · LOJA KINGS", "colaborador": "CARLOS EDUARDO F. M. DE OLIVEIRA", "parcela": "2/3", "dataVale": null, "vencimento": null, "valor": 158.0, "referente": "INVENTARIO", "descontado": false, "observacao": ""}, {"id": "imp175", "month": "2026-11", "pdv": "90 · LOJA RESERVA", "colaborador": "VITOR G. GUIMARÃES GREGO", "parcela": "2/5", "dataVale": "06/08/2026", "vencimento": "04/11/2026", "valor": 55.02, "referente": "COPARTICIPAÇÃO PLANO", "descontado": false, "observacao": ""}, {"id": "imp176", "month": "2026-11", "pdv": "90 · LOJA RESERVA", "colaborador": "SAMIRA COSTA MARQUES RIBEIRO", "parcela": "3/4", "dataVale": "22/07/2026", "vencimento": "06/11/2026", "valor": 246.27, "referente": "RETIRADA EXTERNA", "descontado": false, "observacao": ""}, {"id": "imp177", "month": "2026-11", "pdv": "90 · LOJA RESERVA", "colaborador": "ANDERSON DANTAS DE SOUZA RIOJAS", "parcela": "4/10", "dataVale": "07/03/2026", "vencimento": "06/11/2026", "valor": 296.63, "referente": "RETIRADA INTERNA", "descontado": false, "observacao": ""}, {"id": "imp178", "month": "2026-11", "pdv": "90 · LOJA RESERVA", "colaborador": "RAFEL DERIC PAULA DO NASCIMENTO", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 84.15, "referente": "RETIRADA", "descontado": false, "observacao": ""}, {"id": "imp179", "month": "2026-11", "pdv": "90 · LOJA RESERVA", "colaborador": "DAVI SADIM DE LIMA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 16.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}, {"id": "imp180", "month": "2026-11", "pdv": "90 · LOJA RESERVA", "colaborador": "LUAN AKYAN PEREIRA DE LIMA", "parcela": "1/1", "dataVale": null, "vencimento": null, "valor": 18.0, "referente": "COBRANÇA ERRADA", "descontado": false, "observacao": ""}];
+
+/* ---------------- Date / money helpers ---------------- */
+function toISO(br){ // 'dd/mm/yyyy' -> 'yyyy-mm-dd'
+  if(!br) return '';
+  var p = br.split('/');
+  if(p.length!==3) return '';
+  return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+}
+function toBR(iso){ // 'yyyy-mm-dd' -> 'dd/mm/yyyy'
+  if(!iso) return '';
+  var p = iso.split('-');
+  if(p.length!==3) return '';
+  return p[2]+'/'+p[1]+'/'+p[0];
+}
+function fmtMoney(v){
+  v = Number(v)||0;
+  return 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function parseMoney(s){
+  if(typeof s === 'number') return s;
+  if(!s) return 0;
+  var n = String(s).replace(/[^\d,.-]/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.');
+  var f = parseFloat(n);
+  return isNaN(f)?0:f;
+}
+function monthLabel(key){
+  if(!key) return '—';
+  var parts = key.split('-'); var y=parts[0], m=parseInt(parts[1],10)-1;
+  var name = MONTH_NAMES[m]||'';
+  name = name.charAt(0).toUpperCase()+name.slice(1);
+  return name+' De '+y;
+}
+function monthAbbrLabel(key){
+  if(!key) return '';
+  var parts = key.split('-'); var y=parts[0], m=parseInt(parts[1],10)-1;
+  return (MONTH_ABBR[m]||'')+'/'+y;
+}
+function addMonths(key, n){
+  var parts = key.split('-'); var y=parseInt(parts[0],10), m=parseInt(parts[1],10)-1;
+  var d = new Date(y, m+n, 1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function parseSheetMonth(title){
+  var t = title.trim().toLowerCase();
+  var m = t.match(/([a-zçã]+)\s+de\s+(\d{4})/i);
+  if(!m) return null;
+  var idx = MONTH_NAMES.indexOf(m[1].replace('marco','março'));
+  if(idx<0) return null;
+  return m[2]+'-'+String(idx+1).padStart(2,'0');
+}
+function uid(){ return 'e'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function todayISO(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayMonthKey(){ var d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+
+/* ---------------- State ---------------- */
+var state = null;
+
+function defaultState(){
+  var s = { months:{}, colaboradores:{}, pdvs:[], ui:{ currentMonth:null, filters:{busca:'',pdv:'ALL',referente:'ALL',status:'ALL'} } };
+  SEED_ENTRIES.forEach(function(e){
+    if(!s.months[e.month]) s.months[e.month]=[];
+    s.months[e.month].push({
+      id: e.id, pdv: e.pdv, colaborador: e.colaborador, parcela: e.parcela||'1/1',
+      dataVale: toISO(e.dataVale), vencimento: toISO(e.vencimento),
+      valor: e.valor||0, referente: e.referente||'', descontado: !!e.descontado,
+      observacao: e.observacao||'', anexoNome:'', anexoData:'', origemMes:null
+    });
+    if(s.pdvs.indexOf(e.pdv)===-1) s.pdvs.push(e.pdv);
+    var key = (e.colaborador||'').toUpperCase()+'||'+e.pdv;
+    if(!s.colaboradores[key]) s.colaboradores[key] = {nome:e.colaborador, pdv:e.pdv, cpf:''};
+  });
+  s.pdvs.sort(pdvCompare);
+  var months = Object.keys(s.months).sort();
+  s.ui.currentMonth = months.length? months[months.length-1] : todayMonthKey();
+  return s;
+}
+
+function pdvCompare(a,b){
+  return String(a).localeCompare(String(b),'pt-BR',{numeric:true,sensitivity:'base'});
+}
+
+function load(){
+  try{
+    var raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){ state = JSON.parse(raw); if(!state.ui) state.ui={currentMonth:null,filters:{busca:'',pdv:'ALL',referente:'ALL',status:'ALL'}}; return; }
+  }catch(e){ console.warn('Falha ao ler localStorage', e); }
+  state = defaultState();
+  save();
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  catch(e){ console.warn('Falha ao salvar localStorage', e); toast('Não foi possível salvar localmente (armazenamento cheio?)'); }
+}
+
+function allReferentes(){
+  var set = {}; REFERENTE_BASE.forEach(function(r){set[r]=1;});
+  Object.keys(state.months).forEach(function(mk){
+    state.months[mk].forEach(function(e){ if(e.referente) set[e.referente.toUpperCase()]=1; });
+  });
+  return Object.keys(set).sort(function(a,b){return a.localeCompare(b,'pt-BR');});
+}
+function allMonthsSorted(){ return Object.keys(state.months).sort(); }
+
+function colabKey(nome,pdv){ return (nome||'').trim().toUpperCase()+'||'+pdv; }
+function ensureColaborador(nome,pdv){
+  var k = colabKey(nome,pdv);
+  if(!state.colaboradores[k]) state.colaboradores[k] = {nome:nome,pdv:pdv,cpf:''};
+  if(state.pdvs.indexOf(pdv)===-1){ state.pdvs.push(pdv); state.pdvs.sort(pdvCompare); }
+  return state.colaboradores[k];
+}
+
+/* ---------------- Toast ---------------- */
+var toastTimer=null;
+function toast(msg){
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2600);
+}
+
+/* ---------------- Tabs ---------------- */
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.toggle('active', t.dataset.tab===name); });
+  ['lancamentos','novovale','colaboradores'].forEach(function(v){
+    document.getElementById('view-'+v).hidden = (v!==name);
+  });
+  if(name==='colaboradores') renderColaboradores();
+  if(name==='novovale') renderNovoValeOptions();
+}
+
+/* ---------------- Render: filtros / selects ---------------- */
+function populateSelect(sel, items, placeholder, keepValue){
+  var prev = keepValue? sel.value : null;
+  sel.innerHTML='';
+  if(placeholder){
+    var o=document.createElement('option'); o.value='ALL'; o.textContent=placeholder; sel.appendChild(o);
+  }
+  items.forEach(function(it){
+    var o=document.createElement('option'); o.value=it; o.textContent=it; sel.appendChild(o);
+  });
+  if(prev && items.concat(['ALL']).indexOf(prev)!==-1) sel.value=prev;
+}
+
+function refreshFilterOptions(){
+  populateSelect(document.getElementById('fPdv'), state.pdvs, 'Todos os PDVs', true);
+  populateSelect(document.getElementById('fReferente'), allReferentes(), 'Todos os referentes', true);
+}
+
+/* ---------------- Render: Lançamentos ---------------- */
+function currentEntries(){
+  return state.months[state.ui.currentMonth] || [];
+}
+
+function filteredEntries(){
+  var f = state.ui.filters;
+  var busca = (f.busca||'').trim().toLowerCase();
+  return currentEntries().filter(function(e){
+    if(f.pdv!=='ALL' && e.pdv!==f.pdv) return false;
+    if(f.referente!=='ALL' && (e.referente||'').toUpperCase()!==f.referente) return false;
+    if(f.status==='PEND' && e.descontado) return false;
+    if(f.status==='DESC' && !e.descontado) return false;
+    if(busca){
+      var hay = (e.pdv+' '+e.colaborador).toLowerCase();
+      if(hay.indexOf(busca)===-1) return false;
+    }
+    return true;
+  });
+}
+
+function renderPeriod(){
+  document.getElementById('periodLabel').textContent = monthLabel(state.ui.currentMonth);
+}
+
+function renderSummary(){
+  var all = currentEntries();
+  var total=0, desc=0;
+  var colabSet = {};
+  all.forEach(function(e){
+    total += Number(e.valor)||0;
+    if(e.descontado) desc += Number(e.valor)||0;
+    colabSet[colabKey(e.colaborador,e.pdv)]=1;
+  });
+  document.getElementById('cardTotal').textContent = fmtMoney(total);
+  document.getElementById('cardDescontado').textContent = fmtMoney(desc);
+  document.getElementById('cardPendente').textContent = fmtMoney(total-desc);
+  document.getElementById('cardColabs').textContent = Object.keys(colabSet).length;
+}
+
+function groupBy(list, keyFn){
+  var map={}, order=[];
+  list.forEach(function(it){
+    var k = keyFn(it);
+    if(!map[k]){ map[k]=[]; order.push(k); }
+    map[k].push(it);
+  });
+  return {map:map, order:order};
+}
+
+function sumValor(list){ return list.reduce(function(a,e){return a+(Number(e.valor)||0);},0); }
+
+function renderTable(){
+  var tbody = document.getElementById('tbodyLancamentos');
+  var rows = filteredEntries();
+  if(rows.length===0){
+    tbody.innerHTML = '<tr><td colspan="11"><div class="empty-state">Nenhum lançamento encontrado para este mês / filtro.</div></td></tr>';
+    return;
+  }
+  var byPdv = groupBy(rows, function(e){return e.pdv;});
+  byPdv.order.sort(pdvCompare);
+  var html = '';
+  byPdv.order.forEach(function(pdv){
+    var pdvRows = byPdv.map[pdv];
+    var byColab = groupBy(pdvRows, function(e){return e.colaborador;});
+    byColab.order.sort(function(a,b){return a.localeCompare(b,'pt-BR');});
+    html += '<tr class="row-pdv-header"><td colspan="11">'+escapeHtml(pdv)+'<span class="count">'+byColab.order.length+' colaborador'+(byColab.order.length>1?'es':'')+'</span></td></tr>';
+    byColab.order.forEach(function(colab){
+      var entries = byColab.map[colab];
+      html += '<tr class="row-colab-header"><td colspan="11">'+escapeHtml(colab)+'</td></tr>';
+      entries.forEach(function(e){
+        var vencBadge='';
+        if(e.origemMes && e.origemMes!==state.ui.currentMonth){
+          vencBadge = '<span class="pill-carry">&#8635; '+monthAbbrLabel(e.origemMes)+'</span>';
+        }
+        html += '<tr class="data-row" data-id="'+e.id+'">'+
+          '<td class="cell-pdv">'+escapeHtml(e.pdv)+'</td>'+
+          '<td class="cell-colab">'+escapeHtml(e.colaborador)+'</td>'+
+          '<td>'+escapeHtml(e.parcela)+'</td>'+
+          '<td>'+(e.dataVale?escapeHtml(toBR(e.dataVale)):'—')+'</td>'+
+          '<td><div class="cell-venc">'+(e.vencimento?escapeHtml(toBR(e.vencimento)):'—')+vencBadge+'</div></td>'+
+          '<td class="num" style="text-align:right">'+fmtMoney(e.valor)+'</td>'+
+          '<td>'+referenteSelectHtml(e.id,e.referente)+'</td>'+
+          '<td><input type="checkbox" class="desc-check" data-id="'+e.id+'" '+(e.descontado?'checked':'')+'></td>'+
+          '<td class="obs-cell" data-id="'+e.id+'" title="'+escapeHtml(e.observacao)+'">'+(e.observacao?escapeHtml(e.observacao):'—')+'</td>'+
+          '<td>'+anexoCellHtml(e)+'</td>'+
+          '<td class="actions-cell">'+
+            '<button class="icon-btn btn-edit" data-id="'+e.id+'" title="Editar">&#9998;</button>'+
+            '<button class="icon-btn btn-del" data-id="'+e.id+'" title="Excluir">&#128465;</button>'+
+          '</td>'+
+        '</tr>';
+      });
+      html += '<tr class="row-colab-total"><td colspan="5">Total '+escapeHtml(colab)+'</td><td class="num" style="text-align:right">'+fmtMoney(sumValor(entries))+'</td><td colspan="5"></td></tr>';
+    });
+    html += '<tr class="row-pdv-total"><td colspan="5">Total '+escapeHtml(pdv)+'</td><td class="num" style="text-align:right">'+fmtMoney(sumValor(pdvRows))+'</td><td colspan="5"></td></tr>';
+  });
+  tbody.innerHTML = html;
+  wireTableRowEvents();
+}
+
+function referenteSelectHtml(id, current){
+  var opts = allReferentes();
+  if(current && opts.indexOf((current||'').toUpperCase())===-1) opts.push((current||'').toUpperCase());
+  var html = '<select class="ref-select" data-id="'+id+'">';
+  opts.forEach(function(o){
+    html += '<option value="'+escapeHtml(o)+'" '+(o===(current||'').toUpperCase()?'selected':'')+'>'+escapeHtml(o)+'</option>';
+  });
+  html += '</select>';
+  return html;
+}
+function anexoCellHtml(e){
+  if(e.anexoData){
+    return '<button class="icon-btn btn-anexo-view" data-id="'+e.id+'" title="'+escapeHtml(e.anexoNome||'Ver anexo')+'">&#128206;</button>';
+  }
+  return '<button class="icon-btn btn-anexo-add" data-id="'+e.id+'" title="Anexar comprovante">&#128206;+</button>';
+}
+
+function findEntry(id){
+  var mk = state.ui.currentMonth;
+  var list = state.months[mk]||[];
+  for(var i=0;i<list.length;i++){ if(list[i].id===id) return list[i]; }
+  return null;
+}
+
+function wireTableRowEvents(){
+  document.querySelectorAll('#tbodyLancamentos .desc-check').forEach(function(cb){
+    cb.addEventListener('change', function(){
+      var e = findEntry(cb.dataset.id); if(!e) return;
+      e.descontado = cb.checked; save(); renderSummary(); renderColabTotalsInline();
+    });
+  });
+  document.querySelectorAll('#tbodyLancamentos .ref-select').forEach(function(sel){
+    sel.addEventListener('change', function(){
+      var e = findEntry(sel.dataset.id); if(!e) return;
+      e.referente = sel.value; save();
+    });
+  });
+  document.querySelectorAll('#tbodyLancamentos .obs-cell').forEach(function(td){
+    td.addEventListener('click', function(){
+      var e = findEntry(td.dataset.id); if(!e) return;
+      var val = prompt('Observação:', e.observacao||'');
+      if(val!==null){ e.observacao = val; save(); renderTable(); }
+    });
+  });
+  document.querySelectorAll('#tbodyLancamentos .btn-edit').forEach(function(b){
+    b.addEventListener('click', function(){ openEntryModal(b.dataset.id); });
+  });
+  document.querySelectorAll('#tbodyLancamentos .btn-del').forEach(function(b){
+    b.addEventListener('click', function(){
+      if(!confirm('Excluir este lançamento?')) return;
+      var mk = state.ui.currentMonth;
+      state.months[mk] = (state.months[mk]||[]).filter(function(x){return x.id!==b.dataset.id;});
+      save(); renderAll();
+    });
+  });
+  document.querySelectorAll('#tbodyLancamentos .btn-anexo-add, #tbodyLancamentos .btn-anexo-view').forEach(function(b){
+    b.addEventListener('click', function(){ handleAnexoClick(b.dataset.id); });
+  });
+}
+
+function renderColabTotalsInline(){ renderTable(); renderSummary(); }
+
+function handleAnexoClick(id){
+  var e = findEntry(id); if(!e) return;
+  if(e.anexoData){
+    var w = window.open();
+    if(w){ w.document.write('<title>'+escapeHtml(e.anexoNome||'Anexo')+'</title><iframe src="'+e.anexoData+'" style="width:100%;height:100vh;border:0;"></iframe>'); }
+    return;
+  }
+  var input = document.createElement('input');
+  input.type='file'; input.accept='.pdf,.jpg,.jpeg,.png,.xlsx,.xls';
+  input.onchange = function(){
+    var f = input.files[0]; if(!f) return;
+    if(f.size > 4*1024*1024){ toast('Arquivo muito grande (máx. 4MB) para anexar localmente.'); return; }
+    var reader = new FileReader();
+    reader.onload = function(){ e.anexoNome=f.name; e.anexoData=reader.result; save(); renderTable(); toast('Anexo adicionado.'); };
+    reader.readAsDataURL(f);
+  };
+  input.click();
+}
+
+function renderAll(){
+  refreshFilterOptions();
+  renderPeriod();
+  renderSummary();
+  renderTable();
+}
+
+/* ---------------- Period navigation ---------------- */
+function goPrevMonth(){
+  var months = allMonthsSorted();
+  var idx = months.indexOf(state.ui.currentMonth);
+  if(idx>0){ state.ui.currentMonth = months[idx-1]; save(); renderAll(); }
+  else toast('Não há mês anterior registrado.');
+}
+function goNextMonth(){
+  var months = allMonthsSorted();
+  var idx = months.indexOf(state.ui.currentMonth);
+  if(idx>=0 && idx<months.length-1){ state.ui.currentMonth = months[idx+1]; save(); renderAll(); return; }
+  var nextKey = addMonths(state.ui.currentMonth, 1);
+  carryForward(state.ui.currentMonth, nextKey);
+  state.ui.currentMonth = nextKey;
+  save(); renderAll();
+  toast('Novo mês criado: '+monthLabel(nextKey)+' (parcelas pendentes relançadas automaticamente).');
+}
+function carryForward(fromKey, toKey){
+  if(state.months[toKey]) return;
+  var src = state.months[fromKey]||[];
+  var pend = src.filter(function(e){ return !e.descontado; });
+  state.months[toKey] = pend.map(function(e){
+    var novaParcela = e.parcela;
+    var m = /^(\d+)\/(\d+)$/.exec(e.parcela||'');
+    if(m){
+      var n = parseInt(m[1],10), total = parseInt(m[2],10);
+      if(n<total) novaParcela = (n+1)+'/'+total;
+    }
+    var novoVenc = e.vencimento ? addMonths(e.vencimento.slice(0,7),1)+'-'+e.vencimento.slice(8,10) : '';
+    return {
+      id: uid(), pdv:e.pdv, colaborador:e.colaborador, parcela:novaParcela,
+      dataVale:e.dataVale, vencimento:novoVenc, valor:e.valor, referente:e.referente,
+      descontado:false, observacao:e.observacao, anexoNome:'', anexoData:'',
+      origemMes: e.origemMes || fromKey
+    };
+  });
+}
+
+/* ---------------- Limpar período ---------------- */
+function limparPeriodo(){
+  if(!confirm('Tem certeza que deseja limpar todos os lançamentos de '+monthLabel(state.ui.currentMonth)+'? Esta ação não pode ser desfeita.')) return;
+  state.months[state.ui.currentMonth] = [];
+  save(); renderAll();
+  toast('Período limpo.');
+}
+
+/* ---------------- Importar planilha ---------------- */
+function importarPlanilha(file){
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, {type:'array', cellDates:false});
+      var monthsImported = [];
+      wb.SheetNames.forEach(function(sheetName){
+        var mk = parseSheetMonth(sheetName) || guessMonthFromAny(sheetName);
+        if(!mk) return;
+        var ws = wb.Sheets[sheetName];
+        var rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+        if(rows.length<2) return;
+        var header = rows[0].map(function(h){return String(h||'').trim().toLowerCase();});
+        var idx = {
+          pdv: header.indexOf('pdv'), colaborador: header.indexOf('colaborador'),
+          parcela: header.indexOf('parcela'), dataVale: header.indexOf('data do vale'),
+          vencimento: header.indexOf('vencimento'), valor: header.indexOf('valor'),
+          referente: header.indexOf('referente'), descontado: header.indexOf('descontado'),
+          observacao: header.indexOf('observação')
+        };
+        var out = [];
+        for(var i=1;i<rows.length;i++){
+          var r = rows[i];
+          var pdv = idx.pdv>=0? String(r[idx.pdv]||'').trim() : '';
+          if(!pdv) continue;
+          out.push({
+            id: uid(), pdv: pdv,
+            colaborador: idx.colaborador>=0? String(r[idx.colaborador]||'').trim() : '',
+            parcela: idx.parcela>=0? String(r[idx.parcela]||'1/1').trim() : '1/1',
+            dataVale: idx.dataVale>=0? toISO(String(r[idx.dataVale]||'').trim()) : '',
+            vencimento: idx.vencimento>=0? toISO(String(r[idx.vencimento]||'').trim()) : '',
+            valor: idx.valor>=0? parseMoney(r[idx.valor]) : 0,
+            referente: idx.referente>=0? String(r[idx.referente]||'').trim().toUpperCase() : '',
+            descontado: idx.descontado>=0? /^sim$/i.test(String(r[idx.descontado]||'').trim()) : false,
+            observacao: idx.observacao>=0? String(r[idx.observacao]||'').trim() : '',
+            anexoNome:'', anexoData:'', origemMes:null
+          });
+        }
+        if(out.length){
+          state.months[mk] = out;
+          out.forEach(function(e){ ensureColaborador(e.colaborador, e.pdv); });
+          monthsImported.push(mk);
+        }
+      });
+      if(monthsImported.length){
+        state.ui.currentMonth = monthsImported.sort()[monthsImported.length-1];
+        save(); renderAll();
+        toast('Importado: '+monthsImported.map(monthLabel).join(', '));
+      } else {
+        toast('Nenhuma aba reconhecida. Use colunas: PDV, Colaborador, Parcela, Data do vale, Vencimento, Valor, Referente, Descontado, Observação.');
+      }
+    }catch(err){
+      console.error(err);
+      toast('Erro ao importar planilha: '+err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function guessMonthFromAny(name){
+  var m = name.match(/(\d{4})[-\/](\d{1,2})/);
+  if(m) return m[1]+'-'+String(m[2]).padStart(2,'0');
+  return null;
+}
+
+/* ---------------- Exportar Excel ---------------- */
+function exportarExcel(){
+  var rows = [['PDV','Colaborador','Parcela','Data do vale','Vencimento','Valor','Referente','Descontado','Observação']];
+  currentEntries().slice().sort(function(a,b){ return pdvCompare(a.pdv,b.pdv) || a.colaborador.localeCompare(b.colaborador,'pt-BR'); })
+    .forEach(function(e){
+      rows.push([e.pdv,e.colaborador,e.parcela,toBR(e.dataVale),toBR(e.vencimento),e.valor,e.referente,e.descontado?'SIM':'NÃO',e.observacao]);
+    });
+  var ws = XLSX.utils.aoa_to_sheet(rows);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, monthLabel(state.ui.currentMonth).slice(0,31));
+  XLSX.writeFile(wb, 'vales_'+state.ui.currentMonth+'.xlsx');
+}
+
+/* ---------------- PDF ---------------- */
+function pdfMes(){
+  generatePdfForMonths([state.ui.currentMonth], 'vales_'+state.ui.currentMonth+'.pdf');
+}
+function pdfGeral(){
+  generatePdfForMonths(allMonthsSorted(), 'vales_geral.pdf');
+}
+function generatePdfForMonths(monthKeys, filename){
+  if(!window.jspdf){ toast('Biblioteca de PDF não carregada.'); return; }
+  var doc = new window.jspdf.jsPDF({orientation:'landscape'});
+  monthKeys.forEach(function(mk, idx){
+    if(idx>0) doc.addPage();
+    doc.setFontSize(14);
+    doc.text('Planilha de Vales — Grupo Macris', 14, 14);
+    doc.setFontSize(11);
+    doc.text(monthLabel(mk), 14, 21);
+    var list = (state.months[mk]||[]).slice().sort(function(a,b){ return pdvCompare(a.pdv,b.pdv) || a.colaborador.localeCompare(b.colaborador,'pt-BR'); });
+    var body = list.map(function(e){
+      return [e.pdv, e.colaborador, e.parcela, toBR(e.dataVale), toBR(e.vencimento), fmtMoney(e.valor), e.referente, e.descontado?'Sim':'Não', e.observacao];
+    });
+    var total = sumValor(list), desc = sumValor(list.filter(function(e){return e.descontado;}));
+    doc.autoTable({
+      startY:26,
+      head:[['PDV','Colaborador','Parcela','Data do vale','Vencimento','Valor','Referente','Descontado','Observação']],
+      body: body,
+      styles:{fontSize:7, cellPadding:2},
+      headStyles:{fillColor:[28,36,48]},
+      columnStyles:{5:{halign:'right'}}
+    });
+    var endY = doc.lastAutoTable.finalY || 26;
+    doc.setFontSize(10);
+    doc.text('Total: '+fmtMoney(total)+'   |   Já descontado: '+fmtMoney(desc)+'   |   Pendente: '+fmtMoney(total-desc), 14, endY+8);
+  });
+  doc.save(filename);
+}
+
+/* ---------------- Backup ---------------- */
+function baixarBackup(){
+  var blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'backup_planilha_vales_'+todayISO()+'.json';
+  a.click();
+}
+function importarBackup(file){
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var parsed = JSON.parse(ev.target.result);
+      if(!parsed.months) throw new Error('Arquivo inválido.');
+      if(!confirm('Importar este backup substituirá todos os dados atuais. Continuar?')) return;
+      state = parsed;
+      if(!state.ui) state.ui={currentMonth:allMonthsSorted.call(null)||null, filters:{busca:'',pdv:'ALL',referente:'ALL',status:'ALL'}};
+      var months = Object.keys(state.months).sort();
+      if(!state.ui.currentMonth || months.indexOf(state.ui.currentMonth)===-1) state.ui.currentMonth = months[months.length-1];
+      save(); renderAll();
+      toast('Backup importado com sucesso.');
+    }catch(err){ toast('Erro ao importar backup: '+err.message); }
+  };
+  reader.readAsText(file);
+}
+
+/* ---------------- Novo Vale ---------------- */
+var nvAnexo = {nome:'', data:''};
+function renderNovoValeOptions(){
+  populateSelect(document.getElementById('nvPdv'), state.pdvs, null, true);
+  populateSelect(document.getElementById('nvReferente'), allReferentes(), null, true);
+  var dl = document.getElementById('dlColaboradores');
+  dl.innerHTML = Object.keys(state.colaboradores).map(function(k){
+    return '<option value="'+escapeHtml(state.colaboradores[k].nome)+'">';
+  }).join('');
+  if(!document.getElementById('nvMesDesconto').value) document.getElementById('nvMesDesconto').value = state.ui.currentMonth;
+  if(!document.getElementById('nvData').value) document.getElementById('nvData').value = todayISO();
+}
+function limparNovoVale(){
+  document.getElementById('nvColaborador').value='';
+  document.getElementById('nvData').value=todayISO();
+  document.getElementById('nvMesDesconto').value=state.ui.currentMonth;
+  document.getElementById('nvValor').value='';
+  document.getElementById('nvParcelas').value=1;
+  document.getElementById('nvObs').value='';
+  nvAnexo={nome:'',data:''};
+  var dz = document.getElementById('nvDropzone');
+  dz.textContent='Clique para selecionar um arquivo (PDF, JPG, PNG ou Excel)';
+  dz.classList.remove('has-file');
+}
+function coletarNovoVale(){
+  var pdv = document.getElementById('nvPdv').value;
+  var colaborador = document.getElementById('nvColaborador').value.trim();
+  var dataVale = document.getElementById('nvData').value;
+  var mesDesconto = document.getElementById('nvMesDesconto').value;
+  var referente = document.getElementById('nvReferente').value;
+  var valorTotal = parseFloat(document.getElementById('nvValor').value)||0;
+  var parcelas = Math.max(1, parseInt(document.getElementById('nvParcelas').value,10)||1);
+  var obs = document.getElementById('nvObs').value.trim();
+  if(!pdv || !colaborador || !valorTotal){ toast('Preencha PDV, colaborador e valor do vale.'); return null; }
+  if(!mesDesconto){ toast('Informe o mês do desconto.'); return null; }
+  return {pdv:pdv, colaborador:colaborador, dataVale:dataVale, mesDesconto:mesDesconto, referente:referente, valorTotal:valorTotal, parcelas:parcelas, obs:obs};
+}
+function salvarNovoVale(){
+  var v = coletarNovoVale(); if(!v) return;
+  ensureColaborador(v.colaborador, v.pdv);
+  var base = Math.floor((v.valorTotal/v.parcelas)*100)/100;
+  var acumulado = 0;
+  for(var i=1;i<=v.parcelas;i++){
+    var mk = addMonths(v.mesDesconto, i-1);
+    var valorParcela = (i===v.parcelas)? Math.round((v.valorTotal-acumulado)*100)/100 : base;
+    acumulado += valorParcela;
+    if(!state.months[mk]) state.months[mk]=[];
+    state.months[mk].push({
+      id: uid(), pdv:v.pdv, colaborador:v.colaborador, parcela:i+'/'+v.parcelas,
+      dataVale:v.dataVale, vencimento:mk+'-05', valor:valorParcela, referente:v.referente,
+      descontado:false, observacao:v.obs,
+      anexoNome: i===1? nvAnexo.nome:'', anexoData: i===1? nvAnexo.data:'', origemMes:null
+    });
+  }
+  save();
+  state.ui.currentMonth = v.mesDesconto;
+  toast('Vale salvo em '+v.parcelas+' parcela(s), a partir de '+monthLabel(v.mesDesconto)+'.');
+  limparNovoVale();
+  switchTab('lancamentos'); renderAll();
+}
+function gerarPromissorias(){
+  var v = coletarNovoVale(); if(!v) return;
+  if(!window.jspdf){ toast('Biblioteca de PDF não carregada.'); return; }
+  var doc = new window.jspdf.jsPDF();
+  var colabRec = state.colaboradores[colabKey(v.colaborador,v.pdv)] || {cpf:''};
+  var base = Math.floor((v.valorTotal/v.parcelas)*100)/100;
+  var acumulado=0;
+  for(var i=1;i<=v.parcelas;i++){
+    if(i>1) doc.addPage();
+    var mk = addMonths(v.mesDesconto, i-1);
+    var valorParcela = (i===v.parcelas)? Math.round((v.valorTotal-acumulado)*100)/100 : base;
+    acumulado += valorParcela;
+    doc.setFontSize(14); doc.text('NOTA PROMISSÓRIA', 105, 24, {align:'center'});
+    doc.setFontSize(10);
+    doc.text('Nº '+i+'/'+v.parcelas, 105, 31, {align:'center'});
+    doc.setFontSize(11);
+    doc.text('Valor: '+fmtMoney(valorParcela), 20, 50);
+    doc.text('Vencimento: '+toBR(mk+'-05'), 20, 58);
+    doc.text('PDV / Loja: '+v.pdv, 20, 66);
+    doc.text('Colaborador: '+v.colaborador, 20, 74);
+    doc.text('CPF: '+(colabRec.cpf||'_________________________'), 20, 82);
+    doc.text('Referente: '+(v.referente||'-'), 20, 90);
+    doc.setFontSize(9);
+    var txt = 'Aos '+toBR(mk+'-05')+', pagarei por esta única via de nota promissória, a GRUPO MACRIS, ou à sua ordem, a quantia de '+fmtMoney(valorParcela)+', em moeda corrente deste país, referente a '+(v.referente||'vale concedido')+'.';
+    doc.text(doc.splitTextToSize(txt, 170), 20, 105);
+    doc.text('Porto Velho/RO, '+toBR(todayISO())+'.', 20, 150);
+    doc.text('_______________________________________', 20, 180);
+    doc.text(v.colaborador, 20, 186);
+  }
+  doc.save('promissorias_'+v.colaborador.replace(/\s+/g,'_')+'.pdf');
+}
+
+/* ---------------- Colaboradores tab ---------------- */
+function statsForColaborador(nome,pdv){
+  var total=0, desc=0, count=0;
+  Object.keys(state.months).forEach(function(mk){
+    state.months[mk].forEach(function(e){
+      if(e.colaborador===nome && e.pdv===pdv){ total+=Number(e.valor)||0; if(e.descontado) desc+=Number(e.valor)||0; count++; }
+    });
+  });
+  return {total:total, desc:desc, restante:total-desc, count:count};
+}
+function renderColaboradores(){
+  var busca = (document.getElementById('cBusca').value||'').trim().toLowerCase();
+  var statusF = document.getElementById('cStatus').value;
+  var byPdv = {};
+  Object.keys(state.colaboradores).forEach(function(k){
+    var c = state.colaboradores[k];
+    if(busca && (c.nome+' '+c.pdv).toLowerCase().indexOf(busca)===-1) return;
+    var st = statsForColaborador(c.nome, c.pdv);
+    var ok = st.restante<=0.004;
+    if(statusF==='OK' && !ok) return;
+    if(statusF==='PEND' && ok) return;
+    if(!byPdv[c.pdv]) byPdv[c.pdv]=[];
+    byPdv[c.pdv].push({c:c, st:st, ok:ok});
+  });
+  var pdvOrder = Object.keys(byPdv).sort(pdvCompare);
+  var html='';
+  if(pdvOrder.length===0){ html='<div class="empty-state">Nenhum colaborador encontrado.</div>'; }
+  pdvOrder.forEach(function(pdv){
+    var list = byPdv[pdv].sort(function(a,b){return a.c.nome.localeCompare(b.c.nome,'pt-BR');});
+    html += '<div class="pdv-group"><div class="pdv-group-title">'+escapeHtml(pdv)+'<span class="count">'+list.length+' colaborador'+(list.length>1?'es':'')+'</span></div>';
+    list.forEach(function(item){
+      var c=item.c, st=item.st;
+      html += '<div class="colab-card">'+
+        '<div>'+
+          '<div class="name">'+escapeHtml(c.nome)+' <span class="pencil" data-edit-colab="'+encodeURIComponent(colabKey(c.nome,c.pdv))+'">&#9998;</span></div>'+
+          '<div class="sub">'+st.count+' vale'+(st.count!==1?'s':'')+' · '+(c.cpf? ('CPF '+escapeHtml(c.cpf)) : '<a href="#" data-edit-colab="'+encodeURIComponent(colabKey(c.nome,c.pdv))+'">CPF não cadastrado</a>')+'</div>'+
+        '</div>'+
+        '<div class="colab-metric"><div class="l">Total</div><div class="v num">'+fmtMoney(st.total)+'</div></div>'+
+        '<div class="colab-metric"><div class="l">Descontado</div><div class="v num" style="color:var(--green)">'+fmtMoney(st.desc)+'</div></div>'+
+        '<div class="colab-metric"><div class="l">Restante</div><div class="v num" style="color:'+(st.restante>0.004?'var(--red)':'var(--ink-faint)')+'">'+fmtMoney(st.restante)+'</div></div>'+
+        '<div><span class="badge '+(item.ok?'ok':'pending')+'">'+(item.ok?'Sem pendência':'Em andamento')+'</span></div>'+
+        '<div class="chev">&#8250;</div>'+
+      '</div>';
+    });
+    html += '</div>';
+  });
+  document.getElementById('colabList').innerHTML = html;
+  document.querySelectorAll('[data-edit-colab]').forEach(function(el){
+    el.addEventListener('click', function(ev){ ev.preventDefault(); openColabModal(decodeURIComponent(el.dataset.editColab)); });
+  });
+}
+
+/* ---------------- Modals ---------------- */
+function openModal(id){ document.getElementById(id).hidden=false; }
+function closeModal(id){ document.getElementById(id).hidden=true; }
+
+function openColabModal(key){
+  var c = key? state.colaboradores[key] : null;
+  document.getElementById('modalColabTitle').textContent = c? 'Editar colaborador' : 'Novo colaborador';
+  document.getElementById('mcNome').value = c? c.nome:'';
+  document.getElementById('mcCpf').value = c? c.cpf:'';
+  populateSelect(document.getElementById('mcPdv'), state.pdvs, null, false);
+  if(c) document.getElementById('mcPdv').value = c.pdv;
+  document.getElementById('mcSalvar').dataset.editKey = key||'';
+  openModal('modalColab');
+}
+function saveColabModal(){
+  var nome = document.getElementById('mcNome').value.trim();
+  var pdv = document.getElementById('mcPdv').value;
+  var cpf = document.getElementById('mcCpf').value.trim();
+  if(!nome||!pdv){ toast('Informe nome e PDV.'); return; }
+  var editKey = document.getElementById('mcSalvar').dataset.editKey;
+  if(editKey && state.colaboradores[editKey]){ delete state.colaboradores[editKey]; }
+  var k = colabKey(nome,pdv);
+  state.colaboradores[k] = {nome:nome, pdv:pdv, cpf:cpf};
+  save(); closeModal('modalColab'); renderColaboradores();
+  toast('Colaborador salvo.');
+}
+
+function openPdvModal(){
+  renderPdvManageList();
+  openModal('modalPdv');
+}
+function renderPdvManageList(){
+  var html = state.pdvs.map(function(p,i){
+    return '<div class="pdv-manage-row"><input type="text" value="'+escapeHtml(p)+'" data-pdv-idx="'+i+'"><button class="icon-btn btn-del-pdv" data-pdv-idx="'+i+'" title="Remover">&#128465;</button></div>';
+  }).join('');
+  document.getElementById('pdvManageList').innerHTML = html || '<div class="empty-state">Nenhum PDV cadastrado.</div>';
+  document.querySelectorAll('[data-pdv-idx]').forEach(function(el){
+    if(el.tagName==='INPUT'){
+      el.addEventListener('change', function(){
+        var idx = parseInt(el.dataset.pdvIdx,10);
+        state.pdvs[idx] = el.value.trim();
+        save(); refreshFilterOptions(); toast('PDV atualizado.');
+      });
+    } else {
+      el.addEventListener('click', function(){
+        var idx = parseInt(el.dataset.pdvIdx,10);
+        if(!confirm('Remover este PDV da lista? (lançamentos existentes não serão apagados)')) return;
+        state.pdvs.splice(idx,1); save(); renderPdvManageList(); refreshFilterOptions();
+      });
+    }
+  });
+}
+
+function openEntryModal(id){
+  var e = findEntry(id); if(!e) return;
+  populateSelect(document.getElementById('mePdv'), state.pdvs, null, false);
+  document.getElementById('mePdv').value = e.pdv;
+  document.getElementById('meColaborador').value = e.colaborador;
+  document.getElementById('meParcela').value = e.parcela;
+  document.getElementById('meValor').value = e.valor;
+  document.getElementById('meData').value = e.dataVale;
+  document.getElementById('meVencimento').value = e.vencimento;
+  populateSelect(document.getElementById('meReferente'), allReferentes(), null, false);
+  document.getElementById('meReferente').value = (e.referente||'').toUpperCase();
+  document.getElementById('meDescontado').value = e.descontado? 'sim':'nao';
+  document.getElementById('meObs').value = e.observacao;
+  document.getElementById('meSalvar').dataset.id = id;
+  document.getElementById('meExcluir').dataset.id = id;
+  openModal('modalEntry');
+}
+function saveEntryModal(){
+  var id = document.getElementById('meSalvar').dataset.id;
+  var e = findEntry(id); if(!e) return;
+  e.pdv = document.getElementById('mePdv').value;
+  e.colaborador = document.getElementById('meColaborador').value.trim();
+  e.parcela = document.getElementById('meParcela').value.trim();
+  e.valor = parseFloat(document.getElementById('meValor').value)||0;
+  e.dataVale = document.getElementById('meData').value;
+  e.vencimento = document.getElementById('meVencimento').value;
+  e.referente = document.getElementById('meReferente').value;
+  e.descontado = document.getElementById('meDescontado').value==='sim';
+  e.observacao = document.getElementById('meObs').value.trim();
+  ensureColaborador(e.colaborador, e.pdv);
+  save(); closeModal('modalEntry'); renderAll();
+  toast('Lançamento atualizado.');
+}
+function deleteEntryModal(){
+  var id = document.getElementById('meExcluir').dataset.id;
+  if(!confirm('Excluir este lançamento?')) return;
+  var mk = state.ui.currentMonth;
+  state.months[mk] = (state.months[mk]||[]).filter(function(x){return x.id!==id;});
+  save(); closeModal('modalEntry'); renderAll();
+}
+
+/* ---------------- Importar cadastro (CPF) ---------------- */
+function importarCadastro(file){
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      var data = new Uint8Array(ev.target.result);
+      var wb = XLSX.read(data, {type:'array'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:false, defval:''});
+      var header = rows[0].map(function(h){return String(h||'').trim().toLowerCase();});
+      var iNome = header.indexOf('colaborador')>=0?header.indexOf('colaborador'):header.indexOf('nome');
+      var iPdv = header.indexOf('pdv');
+      var iCpf = header.indexOf('cpf');
+      if(iNome<0 || iCpf<0){ toast('Planilha precisa ter colunas Nome/Colaborador e CPF.'); return; }
+      var n=0;
+      for(var i=1;i<rows.length;i++){
+        var r=rows[i]; var nome=String(r[iNome]||'').trim(); var cpf=String(r[iCpf]||'').trim();
+        if(!nome) continue;
+        var pdv = iPdv>=0? String(r[iPdv]||'').trim() : '';
+        var matchKey = Object.keys(state.colaboradores).find(function(k){ return state.colaboradores[k].nome.toUpperCase()===nome.toUpperCase() && (!pdv || state.colaboradores[k].pdv===pdv); });
+        if(matchKey){ state.colaboradores[matchKey].cpf = cpf; n++; }
+      }
+      save(); renderColaboradores();
+      toast(n+' colaborador(es) atualizados com CPF.');
+    }catch(err){ toast('Erro ao importar cadastro: '+err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ---------------- Wiring ---------------- */
+function wireStatic(){
+  document.querySelectorAll('.tab').forEach(function(t){ t.addEventListener('click', function(){ switchTab(t.dataset.tab); }); });
+
+  document.getElementById('btnPrevMonth').addEventListener('click', goPrevMonth);
+  document.getElementById('btnNextMonth').addEventListener('click', goNextMonth);
+  document.getElementById('btnIncluirVale').addEventListener('click', function(){ switchTab('novovale'); document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab==='novovale');}); });
+
+  document.getElementById('fBusca').addEventListener('input', function(){ state.ui.filters.busca=this.value; renderTable(); });
+  document.getElementById('fPdv').addEventListener('change', function(){ state.ui.filters.pdv=this.value; renderTable(); });
+  document.getElementById('fReferente').addEventListener('change', function(){ state.ui.filters.referente=this.value; renderTable(); });
+  document.getElementById('fStatus').addEventListener('change', function(){ state.ui.filters.status=this.value; renderTable(); });
+
+  document.getElementById('btnLimparPeriodo').addEventListener('click', limparPeriodo);
+  document.getElementById('btnExportarExcel').addEventListener('click', exportarExcel);
+  document.getElementById('btnPdfMes').addEventListener('click', pdfMes);
+  document.getElementById('btnPdfGeral').addEventListener('click', pdfGeral);
+  document.getElementById('btnBackup').addEventListener('click', baixarBackup);
+
+  document.getElementById('btnImportarPlanilha').addEventListener('click', function(){ document.getElementById('fileImportarPlanilha').click(); });
+  document.getElementById('fileImportarPlanilha').addEventListener('change', function(){ if(this.files[0]) importarPlanilha(this.files[0]); this.value=''; });
+
+  document.getElementById('btnImportarBackup').addEventListener('click', function(){ document.getElementById('fileImportarBackup').click(); });
+  document.getElementById('fileImportarBackup').addEventListener('change', function(){ if(this.files[0]) importarBackup(this.files[0]); this.value=''; });
+
+  document.getElementById('nvDropzone').addEventListener('click', function(){ document.getElementById('nvAnexoInput').click(); });
+  document.getElementById('nvAnexoInput').addEventListener('change', function(){
+    var f=this.files[0]; if(!f) return;
+    if(f.size>4*1024*1024){ toast('Arquivo muito grande (máx. 4MB).'); return; }
+    var reader=new FileReader();
+    reader.onload=function(){
+      nvAnexo={nome:f.name, data:reader.result};
+      var dz=document.getElementById('nvDropzone');
+      dz.textContent='&#10003; '+f.name; dz.innerHTML='&#10003; '+escapeHtml(f.name);
+      dz.classList.add('has-file');
+    };
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('nvLimpar').addEventListener('click', limparNovoVale);
+  document.getElementById('nvSalvar').addEventListener('click', salvarNovoVale);
+  document.getElementById('nvPromissorias').addEventListener('click', gerarPromissorias);
+
+  document.getElementById('cBusca').addEventListener('input', renderColaboradores);
+  document.getElementById('cStatus').addEventListener('change', renderColaboradores);
+  document.getElementById('btnGerenciarPdvs').addEventListener('click', openPdvModal);
+  document.getElementById('btnNovoColaborador').addEventListener('click', function(){ openColabModal(null); });
+  document.getElementById('btnImportarCadastro').addEventListener('click', function(){ document.getElementById('fileImportarCadastro').click(); });
+  document.getElementById('fileImportarCadastro').addEventListener('change', function(){ if(this.files[0]) importarCadastro(this.files[0]); this.value=''; });
+
+  document.getElementById('btnAddPdv').addEventListener('click', function(){
+    var v = document.getElementById('novoPdvNome').value.trim();
+    if(!v){ return; }
+    if(state.pdvs.indexOf(v)===-1){ state.pdvs.push(v); state.pdvs.sort(pdvCompare); save(); renderPdvManageList(); refreshFilterOptions(); }
+    document.getElementById('novoPdvNome').value='';
+  });
+
+  document.getElementById('mcSalvar').addEventListener('click', saveColabModal);
+  document.getElementById('meSalvar').addEventListener('click', saveEntryModal);
+  document.getElementById('meExcluir').addEventListener('click', deleteEntryModal);
+
+  document.querySelectorAll('[data-close]').forEach(function(b){
+    b.addEventListener('click', function(){ closeModal(b.dataset.close); });
+  });
+  document.querySelectorAll('.modal-backdrop').forEach(function(bd){
+    bd.addEventListener('click', function(ev){ if(ev.target===bd) bd.hidden=true; });
+  });
+}
+
+/* ---------------- Init ---------------- */
+function init(){
+  load();
+  wireStatic();
+  renderAll();
+}
+document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
